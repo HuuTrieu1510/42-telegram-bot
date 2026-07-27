@@ -2,12 +2,25 @@ import os
 import time
 import json
 import requests
+from datetime import datetime, timedelta
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 CHAT_ID = os.getenv("CHAT_ID")
 POLL_INTERVAL = 30
 STATE_FILE = "last_markets.json"
 API_URL = "https://rest.ft.42.space/api/v1/markets"
+
+def to_vn_time(utc_str):
+    if not utc_str:
+        return "N/A"
+    try:
+        # Lấy phần ngày giờ, bỏ phần Z hoặc milliseconds
+        clean = utc_str[:19].replace("T", " ")
+        dt = datetime.strptime(clean, "%Y-%m-%d %H:%M:%S")
+        vn = dt + timedelta(hours=7)
+        return vn.strftime("%Y-%m-%d %H:%M:%S")
+    except:
+        return utc_str
 
 def send_telegram(message):
     url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
@@ -49,7 +62,8 @@ def format_msg(m):
     address = m.get("address", "")
     question = m.get("question", "No title")
     status = m.get("status", "").upper()
-    created = m.get("createdAt", "")[:19].replace("T", " ")
+    created = to_vn_time(m.get("createdAt", ""))
+    start = to_vn_time(m.get("startDate", ""))
     volume = m.get("volume", 0)
     cats = ", ".join(m.get("categories", [])) or "N/A"
 
@@ -57,14 +71,15 @@ def format_msg(m):
         f"New market on 42\n\n"
         f"{question}\n\n"
         f"Status: {status}\n"
-        f"Created: {created} UTC\n"
+        f"Created: {created} (VN)\n"
+        f"Live luc: {start} (VN)\n"
         f"Volume: {volume:.1f}\n"
         f"Category: {cats}\n\n"
         f"{address}"
     )
 
 def main():
-    print("Bot is running... (notifying new markets every 30s)")
+    print("Bot is running... (new markets + VN time)")
     known = load_state()
     first_run = len(known) == 0
 
