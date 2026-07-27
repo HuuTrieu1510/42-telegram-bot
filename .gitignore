@@ -1,0 +1,5 @@
+.env
+last_markets.json
+__pycache__/
+*.pyc
+venv/
