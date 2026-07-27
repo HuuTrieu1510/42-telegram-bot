@@ -15,26 +15,6 @@ def send_telegram(message):
         "chat_id": CHAT_ID,
         "text": message,
         "parse_mode": "HTML",
-cd ~/42-bot
-
-cat > bot.py << 'EOF'
-import os
-import time
-import json
-import requests
-
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-CHAT_ID = os.getenv("CHAT_ID")
-POLL_INTERVAL = 60
-STATE_FILE = "notified_markets.json"
-API_URL = "https://rest.ft.42.space/api/v1/markets"
-
-def send_telegram(message):
-    url = f"https://api.telegram.org/bot{TELEGRAM_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": CHAT_ID,
-        "text": message,
-        "parse_mode": "HTML",
         "disable_web_page_preview": False
     }
     try:
@@ -75,14 +55,14 @@ def format_msg(m):
     cats = ", ".join(m.get("categories", [])) or "N/A"
 
     return (
-        f"⏳ <b>Market chưa live trên 42</b>\n\n"
-        f"<b>{question}</b>\n\n"
-        f"Status: <code>{status}</code>\n"
-        f"Created: <code>{created} UTC</code>\n"
-        f"Start: <code>{start} UTC</code>\n"
-        f"Volume: <code>{volume:.1f}</code>\n"
-        f"Category: <code>{cats}</code>\n\n"
-        f"<code>{address}</code>"
+        f"Market chua live tren 42\n\n"
+        f"{question}\n\n"
+        f"Status: {status}\n"
+        f"Created: {created} UTC\n"
+        f"Start: {start} UTC\n"
+        f"Volume: {volume:.1f}\n"
+        f"Category: {cats}\n\n"
+        f"{address}"
     )
 
 def main():
