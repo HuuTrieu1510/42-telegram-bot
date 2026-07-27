@@ -2,12 +2,9 @@ import os
 import time
 import json
 import requests
-from dotenv import load_dotenv
 
-load_dotenv()
-
-TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
-CHAT_ID = os.getenv("CHAT_ID")
+TELEGRAM_TOKEN = "8978048324:AAHqBq0yFuSK-bfE-wYa3R71Jpd5s5AWYFs"
+CHAT_ID = "1627350578"
 POLL_INTERVAL = 60
 STATE_FILE = "last_markets.json"
 API_URL = "https://rest.ft.42.space/api/v1/markets"
@@ -23,7 +20,7 @@ def send_telegram(message):
     try:
         requests.post(url, json=payload, timeout=10)
     except Exception as e:
-        print("Lỗi gửi Telegram:", e)
+        print("Telegram error:", e)
 
 def load_state():
     if os.path.exists(STATE_FILE):
@@ -45,7 +42,7 @@ def fetch_markets():
         data = r.json()
         return data.get("markets", data.get("data", []))
     except Exception as e:
-        print("Lỗi API:", e)
+        print("API error:", e)
         return []
 
 def format_msg(m):
@@ -57,7 +54,7 @@ def format_msg(m):
     cats = ", ".join(m.get("categories", [])) or "N/A"
 
     return (
-        f"🆕 <b>Market mới trên 42!</b>\n\n"
+        f"🆕 <b>New market on 42!</b>\n\n"
         f"<b>{question}</b>\n\n"
         f"Status: <code>{status}</code>\n"
         f"Created: <code>{created} UTC</code>\n"
@@ -67,4 +64,32 @@ def format_msg(m):
     )
 
 def main():
-    print("Bot đang chạy... (đ
+    print("Bot is running...")
+    known = load_state()
+    first_run = len(known) == 0
+
+    while True:
+        markets = fetch_markets()
+        new_ones = []
+
+        for m in markets:
+            addr = m.get("address")
+            if addr and addr not in known:
+                new_ones.append(m)
+                known.add(addr)
+
+        if new_ones and not first_run:
+            for m in reversed(new_ones):
+                send_telegram(format_msg(m))
+                print("Sent:", m.get("question")[:50])
+                time.sleep(1)
+
+        if new_ones:
+            save_state(known)
+
+        first_run = False
+        time.sleep(POLL_INTERVAL)
+
+if __name__ == "__main__":
+    main()
+
