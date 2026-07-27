@@ -19,25 +19,16 @@ def send_telegram(message):
     }
     try:
         requests.post(url, json=payload, timeout=10)
+        print("Telegram sent successfully")
     except Exception as e:
         print("Telegram error:", e)
-
-def load_state():
-    if os.path.exists(STATE_FILE):
-        with open(STATE_FILE, "r") as f:
-            return set(json.load(f))
-    return set()
-
-def save_state(known):
-    with open(STATE_FILE, "w") as f:
-        json.dump(list(known), f)
 
 def fetch_markets():
     try:
         r = requests.get(API_URL, params={
             "order": "created_at",
             "ascending": "false",
-            "limit": 15
+            "limit": 5
         }, timeout=15)
         data = r.json()
         return data.get("markets", data.get("data", []))
@@ -64,31 +55,22 @@ def format_msg(m):
     )
 
 def main():
-    print("Bot is running...")
-    known = load_state()
-    first_run = len(known) == 0
+    print("Bot is running... (TEST MODE - will send latest market once)")
+    
+    markets = fetch_markets()
+    
+    if markets:
+        latest = markets[0]  # market mới nhất
+        print("Sending latest market:", latest.get("question")[:60])
+        send_telegram(format_msg(latest))
+    else:
+        print("No markets found")
 
+    print("Test finished. Bot will now sleep.")
+    
+    # Giữ bot sống để không bị Railway tắt
     while True:
-        markets = fetch_markets()
-        new_ones = []
-
-        for m in markets:
-            addr = m.get("address")
-            if addr and addr not in known:
-                new_ones.append(m)
-                known.add(addr)
-
-        if new_ones and not first_run:
-            for m in reversed(new_ones):
-                send_telegram(format_msg(m))
-                print("Sent:", m.get("question")[:50])
-                time.sleep(1)
-
-        if new_ones:
-            save_state(known)
-
-        first_run = False
-        time.sleep(POLL_INTERVAL)
+        time.sleep(3600)
 
 if __name__ == "__main__":
     main()
